@@ -1,0 +1,36 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: responder
+    receivers:
+      - uid: responder-uid
+        type: webhook
+        settings:
+          url: http://responder:8001/alerts
+
+policies:
+  - orgId: 1
+    receiver: responder
+
+rules:
+  - orgId: 1
+    name: 5xx_errors
+    folder: "App Alerts"
+    interval: 1m
+    rules:
+      - uid: 5xx-rule-uid
+        title: App 5xx Errors
+        condition: A
+        data:
+          - refId: A
+            datasourceUid: prometheus-uid
+            model:
+              expr: sum(rate(request_counts_total{http_status_code=~\\"5..\\"}[1m])) > 0
+        for: 1m
+        annotations:
+          summary: "5xx Errors Detected"
+          dashboard: "http://localhost:3000/d/app-dashboard"
+          endpoint: "Unknown"
+        noDataState: OK
+        execErrState: Error
